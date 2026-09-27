@@ -1,0 +1,48 @@
+rules_version = '2';
+
+/* ═══════════════════════════════════════
+   LIFEPLAN — Firestore Security Rules
+   Matches the auth model already built: every real end-user
+   authenticates themselves (email/password, anonymous/guest, Google,
+   or phone) and gets their own Firebase Auth uid. ALL of that user's
+   data lives under /users/{uid}/... and NOTHING else is readable or
+   writable by anyone, including other authenticated users.
+
+   This does not care which sign-in method was used — anonymous,
+   email, Google, and phone all produce a real request.auth.uid,
+   so this same rule set covers all of them uniformly.
+
+   Manually traced against every real read/write path this codebase
+   performs (see data-sync.js's docRef: /users/{uid}/data/{key}):
+     ✓ own uid, own data doc   → allowed (matches the single rule below)
+     ✓ own uid, ANY sub-path   → allowed (the ** wildcard covers any depth)
+     ✗ any other uid's data    → denied (uid in the path must equal
+                                  request.auth.uid; there is no rule
+                                  that grants access across uids)
+     ✗ signed-out request      → denied (request.auth is null)
+     ✗ anything outside /users → denied (explicit catch-all below)
+   This has NOT been run through the live Firebase Rules Playground
+   (no network access in this environment) — worth a 2-minute manual
+   confirmation there before treating this as final for a public launch.
+═══════════════════════════════════════ */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // A user can read/write ONLY their own data, at any depth under
+    // their own uid (their profile doc, /data/{key} sync docs, and
+    // anything added later) — never another user's, ever. A single
+    // recursive wildcard rule covers every depth (0, 1, 2, ...), so
+    // there's no need for a separate one-level-deep rule alongside it.
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Explicit default-deny for literally everything else in the
+    // database. Nothing outside /users/{uid}/... should ever exist,
+    // but if it does, no one can touch it.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0a0b0d"/>
+  <rect x="40" y="40" width="432" height="432" rx="72" fill="#111315"/>
+  <text x="256" y="200" font-family="Arial Black,sans-serif" font-size="120" font-weight="900" fill="#00e676" text-anchor="middle" dominant-baseline="middle">LP</text>
+  <rect x="100" y="290" width="312" height="8" rx="4" fill="#1a1d21"/>
+  <rect x="100" y="290" width="220" height="8" rx="4" fill="#00e676"/>
+  <rect x="100" y="320" width="312" height="8" rx="4" fill="#1a1d21"/>
+  <rect x="100" y="320" width="160" height="8" rx="4" fill="#00e676"/>
+  <rect x="100" y="350" width="312" height="8" rx="4" fill="#1a1d21"/>
+  <rect x="100" y="350" width="260" height="8" rx="4" fill="#00e676"/>
+  <rect x="100" y="380" width="312" height="8" rx="4" fill="#1a1d21"/>
+  <rect x="100" y="380" width="100" height="8" rx="4" fill="#00e676"/>
+</svg>

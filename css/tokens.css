@@ -1,0 +1,78 @@
+/* ═══════════════════════════════════════
+   LIFEPLAN v10 — DESIGN TOKENS
+   Fixed: --acc-rgb defined for all themes
+   Fixed: --tab-h unified to single value
+   Fixed: Light mode acc-rgb added
+═══════════════════════════════════════ */
+:root {
+  --acc:#00e676; --acc-d:rgba(0,230,118,.13); --acc-b:rgba(0,230,118,.25);
+  --acc-glow:rgba(0,230,118,.35); --acc-txt:#000; --acc-rgb:0,230,118;
+  --bg:#0a0b0d; --bg2:#0f1114; --bg3:#141619; --bg4:#1a1d21; --bg5:#1f2328;
+  --bd:#1f2328; --bd2:#272c32; --bd3:#30373f;
+  --tx:#dde3ea; --tx2:#6b7885; --tx3:#2e353d; --tx4:#1a1f24;
+  --red:#ff4757; --red-d:rgba(255,71,87,.13); --red-b:rgba(255,71,87,.28);
+  --amber:#ffa502; --amber-d:rgba(255,165,2,.13); --amber-b:rgba(255,165,2,.28);
+  --font-h:'Barlow Condensed',sans-serif;
+  --font-m:'JetBrains Mono',monospace;
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-xl:18px; --r-full:999px;
+  --shadow-sm:0 1px 4px rgba(0,0,0,.5);
+  --shadow-md:0 4px 20px rgba(0,0,0,.6);
+  --shadow-lg:0 8px 40px rgba(0,0,0,.7);
+  --ease:.18s ease; --ease-spring:.26s cubic-bezier(.4,0,.2,1);
+  /* Single source of truth for tab bar height — used everywhere */
+  --tab-h:60px;
+  /* glassmorphism */
+  --glass-bg:rgba(255,255,255,.06);
+  --glass-border:rgba(255,255,255,.12);
+  --glass-blur:blur(24px);
+}
+
+/* ══ 10 THEMES — each defines --acc-rgb for rgba() heatmap/glow use ══ */
+body.theme-green  {--acc:#00e676;--acc-d:rgba(0,230,118,.13);  --acc-b:rgba(0,230,118,.28);  --acc-glow:rgba(0,230,118,.4);   --acc-txt:#000; --acc-rgb:0,230,118;}
+body.theme-red    {--acc:#ff4757;--acc-d:rgba(255,71,87,.13);  --acc-b:rgba(255,71,87,.28);  --acc-glow:rgba(255,71,87,.4);   --acc-txt:#fff; --acc-rgb:255,71,87;}
+body.theme-blue   {--acc:#2196f3;--acc-d:rgba(33,150,243,.13); --acc-b:rgba(33,150,243,.28); --acc-glow:rgba(33,150,243,.4);  --acc-txt:#fff; --acc-rgb:33,150,243;}
+body.theme-yellow {--acc:#ffd600;--acc-d:rgba(255,214,0,.13);  --acc-b:rgba(255,214,0,.28);  --acc-glow:rgba(255,214,0,.4);   --acc-txt:#000; --acc-rgb:255,214,0;}
+body.theme-black  {--acc:#e0e0e0;--acc-d:rgba(224,224,224,.08);--acc-b:rgba(224,224,224,.18);--acc-glow:rgba(224,224,224,.25);--acc-txt:#000; --acc-rgb:224,224,224;}
+body.theme-orange {--acc:#ff6d00;--acc-d:rgba(255,109,0,.13);  --acc-b:rgba(255,109,0,.28);  --acc-glow:rgba(255,109,0,.4);   --acc-txt:#fff; --acc-rgb:255,109,0;}
+body.theme-purple {--acc:#9c27b0;--acc-d:rgba(156,39,176,.13); --acc-b:rgba(156,39,176,.28); --acc-glow:rgba(156,39,176,.4);  --acc-txt:#fff; --acc-rgb:156,39,176;}
+body.theme-brown  {--acc:#8d6e63;--acc-d:rgba(141,110,99,.13); --acc-b:rgba(141,110,99,.28); --acc-glow:rgba(141,110,99,.4);  --acc-txt:#fff; --acc-rgb:141,110,99;}
+body.theme-maroon {--acc:#880e4f;--acc-d:rgba(136,14,79,.13);  --acc-b:rgba(136,14,79,.28);  --acc-glow:rgba(136,14,79,.4);   --acc-txt:#fff; --acc-rgb:136,14,79;}
+body.theme-lemon  {--acc:#c6ff00;--acc-d:rgba(198,255,0,.13);  --acc-b:rgba(198,255,0,.28);  --acc-glow:rgba(198,255,0,.4);   --acc-txt:#000; --acc-rgb:198,255,0;}
+
+/* ══ LIGHT MODE ══ */
+body.light {
+  --bg:#f0f2f5; --bg2:#ffffff; --bg3:#e8eaed; --bg4:#dde0e5; --bg5:#d0d4da;
+  --bd:#e0e3e8; --bd2:#cdd0d6; --bd3:#b8bcc4;
+  --tx:#1a1d21; --tx2:#6b7380; --tx3:#b0b5bc; --tx4:#d0d3d8;
+  --glass-bg:rgba(255,255,255,.5);
+  --glass-border:rgba(255,255,255,.7);
+}
+
+/* ══ RESET ══ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--font-h);overflow:hidden;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.022'/%3E%3C/svg%3E");pointer-events:none;z-index:9997}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
+
+/* ══ ANIMATIONS ══ */
+@keyframes fadeUp    {from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes fadeIn    {from{opacity:0}to{opacity:1}}
+@keyframes scaleIn   {from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@keyframes slideUp   {from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes floatOrb  {0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-30px) scale(1.05)}}
+@keyframes floatOrb2 {0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(20px) scale(.95)}}
+@keyframes shimmer   {0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes pulse     {0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes glow      {0%,100%{box-shadow:0 0 0 0 var(--acc-glow)}50%{box-shadow:0 0 0 10px transparent}}
+@keyframes shake     {0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+@keyframes badgePop  {0%{transform:scale(0);opacity:0}70%{transform:scale(1.18)}100%{transform:scale(1);opacity:1}}
+@keyframes widgetIn  {from{transform:translateY(120%);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes orbPulse  {0%,100%{opacity:.6}50%{opacity:.2}}
+@keyframes spinSlow  {from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes typing    {0%,80%,100%{transform:scale(0);opacity:.4}40%{transform:scale(1);opacity:1}}
+
+.fu {animation:fadeUp .24s ease both}
+.fu1{animation-delay:.05s}.fu2{animation-delay:.10s}.fu3{animation-delay:.15s}
+.fu4{animation-delay:.20s}.fu5{animation-delay:.25s}.fu6{animation-delay:.30s}
+.si {animation:scaleIn .24s ease both}

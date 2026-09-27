@@ -1,0 +1,30 @@
+{
+  "name": "upg",
+  "version": "10.0.0",
+  "private": true,
+  "description": "UPG — personal productivity system, wrapped as a native Android app via Capacitor.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "android": "npx cap open android",
+    "sync": "npm run build && npx cap sync android",
+    "test": "for f in test/*.test.js; do node \"$f\" || exit 1; done"
+  },
+  "dependencies": {
+    "@capacitor-community/text-to-speech": "^8.0.2",
+    "@capacitor-firebase/authentication": "^8.3.0",
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/cli": "^8.4.2",
+    "@capacitor/core": "^8.4.2",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/local-notifications": "^8.2.1",
+    "firebase": "^12.17.1",
+    "lucide-react": "^0.460.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.3",
+    "vite": "^5.4.10"
+  }
+}

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">UPG</string>
+    <string name="title_activity_main">UPG</string>
+    <string name="package_name">com.upg</string>
+    <string name="custom_url_scheme">com.upg</string>
+</resources>

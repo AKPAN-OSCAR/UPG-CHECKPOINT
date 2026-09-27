@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<meta name="theme-color" content="#0a0b0d"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>UPG</title>
+<!-- During local development, if an older service worker is serving a cached
+     static shell it can block the Vite dev server. Unregister any service
+     workers + clear caches when running on localhost so the dev preview
+     always shows the current bundle. This runs only once per session. -->
+<script>
+  try {
+    if ((location.hostname === 'localhost' || location.hostname === '127.0.0.1') && !sessionStorage.getItem('upg_sw_cleared')) {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())).catch(() => {});
+      }
+      if ('caches' in window) {
+        caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {});
+      }
+      sessionStorage.setItem('upg_sw_cleared', '1');
+      // Reload once so the now-uncontrolled page loads the network version.
+      location.reload();
+    }
+  } catch (e) {}
+</script>
+<link rel="manifest" href="manifest.json"/>
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/tokens.css"/>
+<link rel="stylesheet" href="css/setup.css"/>
+<link rel="stylesheet" href="css/layout.css"/>
+<link rel="stylesheet" href="css/features.css"/>
+<style>
+/* Safe area for notched phones — do not override --tab-h here, it lives in tokens.css */
+.tab-bar { padding-bottom: env(safe-area-inset-bottom, 0px); }
+</style>
+</head>
+<body class="theme-green">
+
+<!-- ══ SETUP SCREEN ══ -->
+<div id="setup-screen" style="display:flex">
+  <div class="setup-bg"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+  <div class="setup-logo-wrap fu">
+    <div class="setup-logo">LIFE<span class="setup-logo-acc">PLAN</span></div>
+    <div class="setup-tagline">YOUR PERSONAL COMMAND CENTER</div>
+  </div>
+  <div class="glass-card fu fu2" style="max-width:440px;width:100%">
+    <div class="step-indicator">
+      <div class="step-dot active"></div><div class="step-dot"></div>
+      <div class="step-dot"></div><div class="step-dot"></div>
+      <div class="step-dot"></div><div class="step-dot"></div>
+      <div class="step-lbl">STEP 1 OF 6</div>
+    </div>
+    <div id="ss1">
+      <div class="setup-q">What's your name?</div>
+      <div class="setup-hint">Used to greet you and personalise your voice alerts.</div>
+      <input class="glass-inp" id="inp-name" placeholder="Enter your name…" maxlength="30" onkeydown="if(event.key==='Enter')Auth.goStep(2)"/>
+      <button class="glass-btn" onclick="Auth.goStep(2)">CONTINUE →</button>
+    </div>
+    <div id="ss2" style="display:none">
+      <div class="setup-q">Where are you based?</div>
+      <div class="setup-hint">Used for accurate clock and date tracking.</div>
+      <div class="tz-grid-setup" id="tz-grid-setup"></div>
+      <button class="glass-btn" onclick="Auth.goStep(3)">CONTINUE →</button>
+      <button class="glass-btn-ghost" onclick="Auth.goStep(1)">← BACK</button>
+    </div>
+    <div id="ss3" style="display:none">
+      <div class="setup-q">Time format?</div>
+      <div class="setup-hint">Applied everywhere time appears in the app.</div>
+      <div class="time-fmt-row">
+        <div class="time-fmt-opt sel" data-fmt="24h" onclick="Auth.pickTimeFmt('24h')"><div class="time-fmt-icon">🕐</div><div class="time-fmt-lbl">24-HOUR</div><div class="time-fmt-sub">14:30 · 08:00</div></div>
+        <div class="time-fmt-opt"     data-fmt="12h" onclick="Auth.pickTimeFmt('12h')"><div class="time-fmt-icon">🕑</div><div class="time-fmt-lbl">12-HOUR</div><div class="time-fmt-sub">2:30 PM · 8:00 AM</div></div>
+      </div>
+      <button class="glass-btn" onclick="Auth.goStep(4)">CONTINUE →</button>
+      <button class="glass-btn-ghost" onclick="Auth.goStep(2)">← BACK</button>
+    </div>
+    <div id="ss4" style="display:none">
+      <div class="setup-q">Pick your theme</div>
+      <div class="setup-hint">You can change this anytime from Profile.</div>
+      <div class="theme-grid" id="theme-grid-setup"></div>
+      <div class="theme-sel-name" id="setup-theme-name">Selected: Green</div>
+      <button class="glass-btn" onclick="Auth.goStep(5)">CONTINUE →</button>
+      <button class="glass-btn-ghost" onclick="Auth.goStep(3)">← BACK</button>
+    </div>
+    <div id="ss5" style="display:none">
+      <div class="setup-q">What are you building?</div>
+      <div class="setup-hint">This becomes your north star. The AI coach will use it every day.</div>
+      <textarea class="glass-inp mission-inp" id="inp-mission"
+        placeholder="e.g. I am building a software company while completing my degree and staying physically strong…"
+        maxlength="200" rows="4"
+        style="resize:none;line-height:1.6;font-size:16px;min-height:110px"></textarea>
+      <div class="mission-char-count"><span id="mission-chars">0</span>/200</div>
+      <button class="glass-btn" onclick="Auth.goStep(6)">CONTINUE →</button>
+      <button class="glass-btn-ghost" onclick="Auth.goStep(4)">← BACK</button>
+    </div>
+    <div id="ss6" style="display:none">
+      <div class="setup-q">Create Your Account</div>
+      <div class="setup-hint">This is a real account — your data stays safe and syncs across devices when you sign in with email.</div>
+
+      <div id="provider-tabs" style="display:flex;gap:8px;margin:14px 0">
+        <button type="button" class="glass-btn-ghost provider-tab active" data-provider="email"
+          onclick="Auth.pickProvider('email')" style="flex:1;padding:10px 4px;font-size:12px">✉️ EMAIL</button>
+        <button type="button" class="glass-btn-ghost provider-tab" data-provider="guest"
+          onclick="Auth.pickProvider('guest')" style="flex:1;padding:10px 4px;font-size:12px">👤 GUEST</button>
+        <button type="button" class="glass-btn-ghost provider-tab" data-provider="google"
+          onclick="Auth.pickProvider('google')" style="flex:1;padding:10px 4px;font-size:12px">G+ GOOGLE</button>
+        <button type="button" class="glass-btn-ghost provider-tab" data-provider="phone"
+          onclick="Auth.pickProvider('phone')" style="flex:1;padding:10px 4px;font-size:12px">📱 PHONE</button>
+      </div>
+
+      <div id="email-fields">
+        <input type="email" class="glass-inp" id="inp-email" placeholder="Email address"
+          autocomplete="email" style="margin-bottom:10px">
+        <input type="password" class="glass-inp" id="inp-password" placeholder="Password (min 6 characters)"
+          autocomplete="new-password" style="margin-bottom:10px">
+        <div class="setup-hint">Sign in with this email + password on any device — no PIN needed, and you'll stay signed in until you log out.</div>
+      </div>
+
+      <div id="anon-note" class="setup-hint" style="display:none">
+        Guest profiles work instantly with no email — your name and 2 PINs are how you unlock this device. Guest data syncs too, but can't follow you to a different device without an email on file.
+      </div>
+      <div id="guest-pin-section" style="display:none">
+        <div class="pin-hint">Set 2 local unlock PINs — exactly <strong style="color:var(--acc)">5 digits</strong> each, must be different. Either one unlocks this device quickly.</div>
+        <div class="pins-container" id="pins-container"></div>
+      </div>
+
+      <div id="google-note" class="setup-hint" style="display:none">
+        Tap below to sign in with your Google account — no password to remember, and your data syncs across devices the same way an email account does.
+        <button class="glass-btn" style="margin-top:12px" onclick="Auth.signInWithGoogle()">G+ CONTINUE WITH GOOGLE →</button>
+      </div>
+
+      <div id="phone-fields" style="display:none">
+        <div id="phone-number-step">
+          <input type="tel" class="glass-inp" id="inp-phone" placeholder="+2348012345678 (international format)"
+            autocomplete="tel" style="margin-bottom:10px">
+          <div class="setup-hint">We'll text a one-time code to verify this number. Standard SMS rates may apply.</div>
+          <button class="glass-btn" id="phone-send-btn" style="margin-top:10px" onclick="Auth.startPhoneVerification()">SEND CODE →</button>
+        </div>
+        <div id="phone-code-step" style="display:none">
+          <input type="text" inputmode="numeric" class="glass-inp" id="inp-phone-code" placeholder="6-digit code"
+            maxlength="6" style="margin-bottom:10px">
+          <button class="glass-btn" id="phone-confirm-btn" style="margin-top:10px" onclick="Auth.confirmPhoneVerification()">VERIFY →</button>
+        </div>
+      </div>
+      <!-- Invisible reCAPTCHA anchor required by Firebase Phone Auth — never shown to the user -->
+      <div id="recaptcha-container"></div>
+
+      <button class="glass-btn" id="create-account-btn" onclick="Auth.createAccount()">CREATE ACCOUNT →</button>
+      <button class="glass-btn-ghost" onclick="Auth.goStep(5)">← BACK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ USER SWITCHER ══ -->
+<div id="user-switcher" style="display:none;flex-direction:column;align-items:center;justify-content:center;position:fixed;inset:0;z-index:8800">
+  <div class="setup-bg"><div class="orb orb-1"></div><div class="orb orb-2"></div></div>
+  <div class="switcher-title">UPG</div>
+  <div class="switcher-sub">SELECT YOUR PROFILE</div>
+  <div class="users-grid" id="users-grid"></div>
+</div>
+
+<!-- ══ SIGN IN (existing email account, any device — no PIN) ══ -->
+<div id="signin-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center;position:fixed;inset:0;z-index:8850;padding:24px">
+  <div class="setup-bg"><div class="orb orb-1"></div><div class="orb orb-2"></div></div>
+  <div style="width:100%;max-width:340px">
+    <div class="setup-q">Sign In</div>
+    <div class="setup-hint">Already have an email account? Sign in here — your name and data come back automatically.</div>
+
+    <input type="email" class="glass-inp" id="signin-email" placeholder="Email address"
+      autocomplete="email" style="margin:14px 0 10px">
+    <input type="password" class="glass-inp" id="signin-password" placeholder="Password"
+      autocomplete="current-password" style="margin-bottom:10px">
+
+    <button class="glass-btn" id="signin-btn" onclick="Auth.submitSignIn()" style="margin-top:14px">SIGN IN →</button>
+    <button class="glass-btn-ghost" onclick="Auth.showSwitcher()">← BACK</button>
+  </div>
+</div>
+
+<!-- ══ PIN LOGIN ══ -->
+<!-- Guest profiles only — email accounts never see this screen -->
+<div id="pin-login" style="display:none;flex-direction:column;align-items:center;justify-content:center;position:fixed;inset:0;z-index:8900">
+  <div class="setup-bg"><div class="orb orb-1"></div><div class="orb orb-2"></div></div>
+  <div class="login-avatar" id="login-avatar">?</div>
+  <div class="login-name"   id="login-name">USER</div>
+  <div class="login-sub"    id="login-sub">ENTER YOUR 5-DIGIT PIN</div>
+  <div class="pin-dots-wrap">
+    <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+    <div class="pin-dot"></div><div class="pin-dot"></div>
+  </div>
+  <div class="pin-pad">
+    <div class="pin-key" onclick="Auth.pinKeypress('1')">1</div><div class="pin-key" onclick="Auth.pinKeypress('2')">2</div><div class="pin-key" onclick="Auth.pinKeypress('3')">3</div>
+    <div class="pin-key" onclick="Auth.pinKeypress('4')">4</div><div class="pin-key" onclick="Auth.pinKeypress('5')">5</div><div class="pin-key" onclick="Auth.pinKeypress('6')">6</div>
+    <div class="pin-key" onclick="Auth.pinKeypress('7')">7</div><div class="pin-key" onclick="Auth.pinKeypress('8')">8</div><div class="pin-key" onclick="Auth.pinKeypress('9')">9</div>
+    <div class="pin-key empty"></div><div class="pin-key" onclick="Auth.pinKeypress('0')">0</div><div class="pin-key del" onclick="Auth.pinKeypress('del')">⌫</div>
+  </div>
+  <div class="login-lockout" id="login-lockout"></div>
+  <div class="login-switch-btn" onclick="Auth.showSwitcher()">← Switch User</div>
+</div>
+
+<!-- ══ APP SHELL ══ -->
+<div id="app-shell" style="display:none">
+  <header class="topbar">
+    <div class="topbar-left"><button class="menu-btn" onclick="App.openMenu()"><span></span><span></span><span></span></button></div>
+    <div class="topbar-brand">UPG</div>
+    <div class="topbar-right"><div class="clock-disp" id="clk">00:00</div><button class="add-btn" onclick="Sheets.openNew()">＋ NEW</button></div>
+  </header>
+  <div id="offline-banner">📡 OFFLINE — data saves locally</div>
+
+  <div class="views">
+
+    <!-- HOME -->
+    <div class="view active" id="v-home">
+      <div class="fu" style="margin-bottom:14px">
+        <div style="font-family:var(--font-m);font-size:7px;color:var(--tx2);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px" id="greet-lbl">GOOD MORNING</div>
+        <div style="font-size:30px;font-weight:800;line-height:1;margin-bottom:3px">HELLO, <span style="color:var(--acc)" id="greet-name">–</span></div>
+        <div style="font-family:var(--font-m);font-size:8px;color:var(--tx2)" id="greet-aim"></div>
+        <div style="font-family:var(--font-m);font-size:8px;color:var(--acc);margin-top:2px;letter-spacing:.3px" id="greet-mission"></div>
+        <div style="font-family:var(--font-m);font-size:8px;color:var(--tx3);margin-top:3px" id="greet-date"></div>
+      </div>
+      <!-- Progress ring + stats -->
+      <div class="overall-prog fu fu1">
+        <div class="op-ring">
+          <svg viewBox="0 0 56 56"><circle class="op-ring-bg" cx="28" cy="28" r="22"/><circle class="op-ring-fill" id="op-ring-fill" cx="28" cy="28" r="22" stroke-dasharray="138" stroke-dashoffset="138"/></svg>
+          <div class="op-ring-txt" id="op-ring-txt">0%</div>
+        </div>
+        <div class="op-info"><div class="op-title">Today's Progress</div><div class="op-sub" id="op-ring-sub">0/0 tasks complete</div></div>
+      </div>
+      <div class="home-stats-row fu fu2">
+        <div class="home-stat"><div class="hs-val" id="hs-score">–</div><div class="hs-lbl">CONSISTENCY</div><div class="hs-sub">Active days only</div></div>
+        <div class="home-stat"><div class="hs-val" id="hs-streak">🔥 0</div><div class="hs-lbl">BEST STREAK</div><div class="hs-sub">days in a row</div></div>
+      </div>
+      <!-- Mood -->
+      <div class="mood-row fu fu2">
+        <div class="mood-title">HOW ARE YOU FEELING TODAY?</div>
+        <div class="mood-emojis" id="mood-picker"></div>
+      </div>
+      <!-- Streak alert -->
+      <div id="streak-alert" style="display:none;background:var(--amber-d);border:1px solid var(--amber-b);border-radius:var(--r-sm);padding:10px 13px;margin-bottom:14px;align-items:center;gap:10px">
+        <span style="font-size:16px">⚠️</span>
+        <div style="flex:1;font-family:var(--font-m);font-size:9px;color:var(--amber)" id="streak-alert-msg"></div>
+      </div>
+      <!-- Quote -->
+      <div class="quote-card fu fu2" id="quote-card"></div>
+      <!-- Search -->
+      <div class="search-wrap fu fu3"><div class="search-icon">🔍</div><input class="search-inp" placeholder="Search tables…" oninput="filterTables(this.value)"/></div>
+      <div class="sec-lbl">ACTIVE TABLES</div>
+      <div class="tables-list" id="active-list"></div>
+      <div class="empty-card fu" onclick="Sheets.openNew()"><span>＋</span><span>CREATE NEW TABLE</span></div>
+      <div id="arch-wrap" style="display:none;margin-top:8px">
+        <div class="arch-toggle" onclick="App.toggleArch()"><div class="arch-toggle-lbl" id="arch-lbl">ARCHIVED TABLES</div><div class="arch-arrow" id="arch-arrow">›</div></div>
+        <div class="arch-section" id="arch-section"></div>
+      </div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="view hidden" id="v-calendar">
+      <div style="font-size:28px;font-weight:800;letter-spacing:2px;margin-bottom:14px">CALENDAR</div>
+      <div class="sec-lbl">SELECT TIMETABLE</div>
+      <div id="cal-tbl-select" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px"></div>
+      <div class="calendar-header">
+        <button class="cal-nav" onclick="Calendar.prev()">‹</button>
+        <div class="cal-month-lbl" id="cal-month-lbl">–</div>
+        <button class="cal-nav" onclick="Calendar.next()">›</button>
+      </div>
+      <div class="cal-day-headers">
+        <div class="cal-day-hdr">M</div><div class="cal-day-hdr">T</div><div class="cal-day-hdr">W</div>
+        <div class="cal-day-hdr">T</div><div class="cal-day-hdr">F</div><div class="cal-day-hdr">S</div><div class="cal-day-hdr">S</div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div style="display:flex;gap:14px;margin-top:12px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:5px;font-family:var(--font-m);font-size:8px;color:var(--tx2)"><div style="width:8px;height:8px;border-radius:50%;background:var(--acc)"></div>Complete</div>
+        <div style="display:flex;align-items:center;gap:5px;font-family:var(--font-m);font-size:8px;color:var(--tx2)"><div style="width:8px;height:8px;border-radius:50%;background:var(--amber)"></div>Partial</div>
+        <div style="display:flex;align-items:center;gap:5px;font-family:var(--font-m);font-size:8px;color:var(--tx2)"><div style="width:8px;height:8px;border-radius:50%;background:var(--red)"></div>Missed</div>
+      </div>
+    </div>
+
+    <!-- AI COACH -->
+    <div class="view hidden" id="v-ai">
+      <div class="ai-header">
+        <div class="ai-title">AI COACH</div>
+        <div class="ai-sub">Powered by Claude · Knows your actual data</div>
+      </div>
+      <div class="ai-quick-prompts">
+        <div class="ai-prompt-chip" onclick="AICoach.sendMessage('Why am I failing my schedule?')">Why am I failing?</div>
+        <div class="ai-prompt-chip" onclick="AICoach.sendMessage('How can I improve my streak?')">Improve streak</div>
+        <div class="ai-prompt-chip" onclick="AICoach.sendMessage('Give me motivation to keep going')">Motivate me</div>
+        <div class="ai-prompt-chip" onclick="AICoach.sendMessage('Analyse my schedule patterns and tell me what to fix')">Analyse patterns</div>
+        <div class="ai-prompt-chip" onclick="AICoach.sendMessage('What should I focus on today?')">Today\'s focus</div>
+        <div class="ai-prompt-chip" onclick="AICoach.sendMessage('Give me a realistic assessment of my progress')">Honest review</div>
+        <div class="ai-prompt-chip" onclick="AICoach.clearHistory()" style="color:var(--red)">🗑 Clear chat</div>
+      </div>
+      <div class="ai-messages" id="ai-messages"></div>
+      <div class="ai-input-row">
+        <input class="ai-inp" id="ai-inp" placeholder="Ask your AI coach anything…" onkeydown="if(event.key==='Enter')aiSend()"/>
+        <button class="ai-send" onclick="aiSend()">➤</button>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="view hidden" id="v-history">
+      <div style="font-size:28px;font-weight:800;letter-spacing:2px;margin-bottom:18px">HISTORY</div>
+      <div class="score-ring-wrap fu">
+        <div class="score-ring">
+          <svg viewBox="0 0 80 80"><circle class="score-ring-bg" cx="40" cy="40" r="32"/><circle class="score-ring-fill" id="score-ring-fill" cx="40" cy="40" r="32" stroke-dasharray="201" stroke-dashoffset="201"/></svg>
+          <div class="score-ring-txt"><div class="score-val" id="score-val">–</div><div class="score-lbl">SCORE</div></div>
+        </div>
+        <div><div class="score-info-title">Consistency Score</div><div class="score-info-sub" id="score-info-sub">Active days only — not penalised for unused days.</div></div>
+      </div>
+      <div class="sec-lbl" style="margin-top:14px">SELECT TABLE</div>
+      <div id="history-tbl-select" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px"></div>
+      <div class="chart-wrap fu"><div class="chart-title">WEEKLY PROGRESS</div><div class="chart-canvas-wrap"><canvas id="progress-chart" class="line-chart"></canvas></div></div>
+      <div id="weekly-review-wrap"></div>
+      <div class="heatmap-wrap fu" id="heatmap-wrap" style="display:none"><div class="heatmap-title" id="heatmap-title">HEATMAP</div><div style="font-family:var(--font-m);font-size:7px;color:var(--tx3);margin-bottom:10px">Last 12 weeks · only shows active days</div><div class="heatmap-grid" id="heatmap-grid"></div></div>
+      <div id="block-stats-wrap" style="display:none;margin-top:16px"><div class="sec-lbl">BLOCK PERFORMANCE</div><div id="block-stats-list"></div></div>
+      <div class="sec-lbl" style="margin-top:16px">EXPORT</div>
+      <div class="export-row">
+        <button class="btn btn-ghost btn-sm" onclick="_exportSchedule()">📄 Schedule</button>
+        <button class="btn btn-ghost btn-sm" onclick="_exportWeekly()">📊 Weekly Report</button>
+        <button class="btn btn-ghost btn-sm" onclick="ExportData.backupData()">💾 Backup</button>
+      </div>
+    </div>
+
+    <!-- BADGES -->
+    <div class="view hidden" id="v-badges">
+      <div style="font-size:28px;font-weight:800;letter-spacing:2px;margin-bottom:6px">BADGES</div>
+      <div style="font-family:var(--font-m);font-size:8px;color:var(--tx2);letter-spacing:1px;margin-bottom:20px" id="badges-count">0 / 10 EARNED</div>
+      <div class="badges-grid" id="badges-grid"></div>
+      <div class="sec-lbl" style="margin-top:14px">SHARE YOUR PROGRESS</div>
+      <div class="share-card" id="share-card"></div>
+      <div class="share-btns" style="margin-top:8px">
+        <button class="btn btn-ghost btn-sm" style="flex:1" onclick="Share.copyShareLink()">🔗 Copy Link</button>
+        <button class="btn btn-primary btn-sm" style="flex:1" onclick="Share.shareNative()">📤 Share</button>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="view hidden" id="v-profile">
+      <div style="font-size:28px;font-weight:800;letter-spacing:2px;margin-bottom:18px">PROFILE</div>
+      <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r-md);padding:18px;margin-bottom:16px;display:flex;align-items:center;gap:14px" class="fu">
+        <div style="width:54px;height:54px;border-radius:50%;background:var(--acc-d);border:2px solid var(--acc);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:var(--acc);flex-shrink:0" id="profile-avatar">?</div>
+        <div style="flex:1;min-width:0"><div style="font-size:22px;font-weight:800" id="profile-name">–</div><div style="font-family:var(--font-m);font-size:8px;color:var(--tx2);margin-top:3px" id="profile-joined">–</div><div style="font-family:var(--font-m);font-size:8px;color:var(--tx2);margin-top:2px" id="profile-aim-disp">–</div><div style="font-family:var(--font-m);font-size:8px;color:var(--acc);margin-top:3px;line-height:1.5;white-space:normal" id="profile-mission-disp"></div></div>
+        <button class="btn-icon" onclick="Sheets.openProfile()">✎</button>
+      </div>
+      <!-- Goals -->
+      <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r-md);padding:16px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:16px;font-weight:700;letter-spacing:1px">🎯 LONG-TERM GOALS</div>
+          <button class="btn btn-primary btn-sm" onclick="openGoalSheet()">＋ ADD</button>
+        </div>
+        <div class="life-areas-row" id="area-filter"></div>
+        <div id="goals-list"></div>
+      </div>
+      <div class="sec-lbl">SETTINGS</div>
+      <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r-md);overflow:hidden;margin-bottom:14px">
+        <div class="side-item" onclick="Sheets.openTZ()"><div class="si-icon">🌍</div><div><div class="si-lbl">Timezone</div><div class="si-sub" id="prof-tz-sub">–</div></div><div style="margin-left:auto;color:var(--tx3)">›</div></div>
+        <div style="height:1px;background:var(--bd)"></div>
+        <div class="side-item" onclick="Sheets.openTimeFmt()"><div class="si-icon">🕐</div><div><div class="si-lbl">Time Format</div><div class="si-sub" id="prof-fmt-sub">24-Hour</div></div><div style="margin-left:auto;color:var(--tx3)">›</div></div>
+        <div style="height:1px;background:var(--bd)"></div>
+        <div class="side-item" onclick="Sheets.openAlertSettings()"><div class="si-icon">🔔</div><div><div class="si-lbl">Alert Widget</div><div class="si-sub">Voice, alarm & timing</div></div><div style="margin-left:auto;color:var(--tx3)">›</div></div>
+        <div style="height:1px;background:var(--bd)"></div>
+        <div class="side-item" onclick="Sheets.openPINMgr()"><div class="si-icon">🔒</div><div><div class="si-lbl">Manage PINs</div><div class="si-sub">Update your 2 login PINs</div></div><div style="margin-left:auto;color:var(--tx3)">›</div></div>
+        <div style="height:1px;background:var(--bd)"></div>
+        <div class="toggle-row" style="padding:11px 16px"><div class="toggle-info"><div class="toggle-lbl">Light Mode</div><div class="toggle-sub">Switch to light theme</div></div><div class="toggle" id="light-toggle" onclick="App.toggleLight()"></div></div>
+      </div>
+      <div class="sec-lbl">APPEARANCE</div>
+      <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r-md);padding:14px 16px;margin-bottom:14px"><div class="f-lbl" style="margin-bottom:10px">THEME COLOR</div><div class="theme-dots-row" id="theme-dots-profile"></div></div>
+      <div class="sec-lbl">DATA</div>
+      <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r-md);overflow:hidden;margin-bottom:14px">
+        <div class="side-item" onclick="Sheets.openManage()"><div class="si-icon">⚙️</div><div><div class="si-lbl">Manage Tables</div><div class="si-sub">Archive or delete</div></div></div>
+        <div style="height:1px;background:var(--bd)"></div>
+        <div class="side-item" onclick="ExportData.backupData()"><div class="si-icon">💾</div><div><div class="si-lbl">Backup Data</div><div class="si-sub">Download your data</div></div></div>
+        <div style="height:1px;background:var(--bd)"></div>
+        <div class="side-item" onclick="document.getElementById('restore-input').click()"><div class="si-icon">📂</div><div><div class="si-lbl">Restore Data</div><div class="si-sub">Import from backup</div></div></div>
+        <input type="file" id="restore-input" accept=".json" style="display:none" onchange="ExportData.restoreData(this.files[0])"/>
+        <div style="height:1px;background:var(--bd)"></div>
+        <div class="side-item" onclick="Widget.installPWA()"><div class="si-icon">📲</div><div><div class="si-lbl">Install App</div><div class="si-sub">Add to home screen</div></div></div>
+        <div style="height:1px;background:var(--bd)"></div>
+        <div class="side-item" onclick="Widget.trigger()"><div class="si-icon">🔔</div><div><div class="si-lbl">Test Alert</div><div class="si-sub">Preview voice & alarm</div></div></div>
+        <div style="height:1px;background:var(--bd)"></div>
+        <div class="side-item" style="color:var(--red)" onclick="Auth.logout()"><div class="si-icon">🚪</div><div><div class="si-lbl" style="color:var(--red)">Log Out</div><div class="si-sub">Return to user switcher</div></div></div>
+      </div>
+
+      <!-- ══ SUBSCRIPTION — rendered by _renderSubscriptionCard() ══ -->
+      <div class="sec-lbl" style="margin-top:6px">PLAN</div>
+      <div id="sub-card-wrap" style="margin-bottom:14px"></div>
+    </div>
+
+    <!-- TIMETABLE -->
+    <div class="view hidden" id="v-timetable">
+      <div class="back-row">
+        <button class="back-btn" onclick="App.goHome()">← BACK</button>
+        <div class="view-title" id="tt-title">TIMETABLE</div>
+        <button class="btn-icon" onclick="openEditTable(State.activeTbl?.id)">✎</button>
+      </div>
+      <div class="tt-toolbar">
+        <button class="tt-mode-btn active" id="btn-mode-sched" onclick="Views.TT.setMode('sched')">📋 SCHEDULE</button>
+        <button class="tt-mode-btn"        id="btn-mode-edit"  onclick="Views.TT.setMode('edit')">✏️ EDIT BLOCKS</button>
+      </div>
+      <div id="tt-sched-panel">
+        <div class="week-strip" id="week-strip"></div>
+        <div class="day-strip"  id="day-strip"></div>
+        <div class="prog-row">
+          <div><div class="prog-big" id="prog-n">0</div><div class="prog-lbl">BLOCKS DONE</div></div>
+          <div class="prog-right"><div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div><div class="prog-sub" id="prog-sub">0% complete</div></div>
+        </div>
+        <div class="day-note"><div class="day-note-lbl">DAY NOTE</div><textarea id="day-note-txt" placeholder="Add a note for today…" rows="2" oninput="Notes.set(State.activeTbl?.id,State.activeWk,State.activeDy,this.value)"></textarea></div>
+        <div class="sched-list" id="sched-list"></div>
+        <div style="margin-top:12px"><button class="btn btn-ghost btn-sm" onclick="_exportSchedule()" style="width:100%">📄 Export Today's Schedule</button></div>
+      </div>
+      <div id="tt-edit-panel" style="display:none">
+        <div class="editor-header"><div class="editor-title">SCHEDULE BLOCKS</div><button class="btn btn-primary btn-sm" onclick="Sheets.openAddBlock()">＋ ADD BLOCK</button></div>
+        <div class="block-list" id="block-list"></div>
+        <div style="font-family:var(--font-m);font-size:8px;color:var(--tx3);letter-spacing:.5px;line-height:1.7;padding:0 2px">Changes apply to all days and weeks.</div>
+      </div>
+    </div>
+
+    <!-- STREAK -->
+    <div class="view hidden" id="v-streak">
+      <div class="back-row">
+        <button class="back-btn" onclick="App.goHome()">← BACK</button>
+        <div class="view-title" id="st-title">STREAK</div>
+        <button class="btn-icon" onclick="openEditTable(State.activeTbl?.id)">✎</button>
+      </div>
+      <div class="streak-hero fu">
+        <div class="streak-big" id="st-count">0</div>
+        <div class="sh-info"><div class="sh-lbl">CURRENT STREAK</div><div class="sh-name" id="st-name">–</div><div class="sh-sub" id="st-sub">–</div></div>
+      </div>
+      <div class="streak-stats" id="streak-stats-row"></div>
+      <div class="sg-hdr"><div class="sg-lbl">MON</div><div class="sg-lbl">TUE</div><div class="sg-lbl">WED</div><div class="sg-lbl">THU</div><div class="sg-lbl">FRI</div><div class="sg-lbl">SAT</div><div class="sg-lbl">SUN</div></div>
+      <div class="sg-weeks" id="sg-grid"></div>
+    </div>
+  </div>
+
+  <!-- 6-TAB BAR -->
+  <nav class="tab-bar">
+    <div class="tab-item active" id="tab-home"     onclick="App.switchTab('home')">    <div class="tab-icon">🏠</div><div class="tab-label">HOME</div></div>
+    <div class="tab-item"        id="tab-calendar" onclick="App.switchTab('calendar')"><div class="tab-icon">📅</div><div class="tab-label">CALENDAR</div></div>
+    <div class="tab-item"        id="tab-ai"       onclick="App.switchTab('ai')">      <div class="tab-icon">🤖</div><div class="tab-label">COACH</div></div>
+    <div class="tab-item"        id="tab-history"  onclick="App.switchTab('history')"> <div class="tab-icon">📊</div><div class="tab-label">HISTORY</div></div>
+    <div class="tab-item"        id="tab-badges"   onclick="App.switchTab('badges')">  <div class="tab-icon">🏆</div><div class="tab-label">BADGES</div><div class="tab-dot" id="badge-dot"></div></div>
+    <div class="tab-item"        id="tab-profile"  onclick="App.switchTab('profile')"> <div class="tab-icon">👤</div><div class="tab-label">PROFILE</div></div>
+  </nav>
+
+  <!-- ALERT WIDGET -->
+  <div id="alert-widget">
+    <div class="widget-top"><div class="widget-avatar">?</div><div class="widget-msg-wrap"><div class="widget-msg">Complete your tasks!</div><div class="widget-sub">0/0 done today</div></div><div class="widget-close" onclick="Widget.hide()">✕</div></div>
+    <div class="widget-prog-track"><div class="widget-prog-fill" style="width:0%"></div></div>
+    <div class="widget-actions">
+      <div class="widget-action" onclick="Widget.snooze(30)">SNOOZE 30M</div>
+      <div class="widget-action" onclick="Widget.snoozeTonight()">TONIGHT</div>
+      <div class="widget-action primary" onclick="Widget.hide();App.goHome()">GO NOW →</div>
+    </div>
+  </div>
+  <!-- PWA BANNER -->
+  <div id="pwa-banner"><div class="pwa-icon">📲</div><div class="pwa-info"><div class="pwa-title">Install UPG</div><div class="pwa-sub">Add to home screen</div></div><div class="pwa-btns"><button class="btn btn-ghost btn-sm" onclick="Widget.dismissPWA()">LATER</button><button class="btn btn-primary btn-sm" onclick="Widget.installPWA()">INSTALL</button></div></div>
+</div>
+
+<!-- ONBOARDING -->
+<div id="onboarding-overlay" style="display:none;position:fixed;inset:0;z-index:8500;background:rgba(0,0,0,.88);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:24px">
+  <div class="onboard-card si">
+    <div class="onboard-icon" id="ob-icon">👋</div>
+    <div class="onboard-title" id="ob-title">WELCOME</div>
+    <div class="onboard-dots"><div class="ob-dot active"></div><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot"></div></div>
+    <div class="onboard-body" id="ob-body"></div>
+    <div class="onboard-btns"><button class="btn btn-ghost" style="flex:1" onclick="obSkip()">SKIP</button><button class="btn btn-primary" style="flex:1" id="ob-next" onclick="obNext()">NEXT →</button></div>
+  </div>
+</div>
+
+<!-- SIDE MENU -->
+<div class="side-overlay" id="side-overlay" onclick="App.closeMenu()"></div>
+<div class="side-panel" id="side-panel">
+  <div class="side-hdr"><div class="side-avatar" id="menu-avatar">?</div><div><div class="side-uname" id="menu-name">–</div><div class="side-since" id="menu-since">–</div></div></div>
+  <div class="side-body">
+    <div class="side-sec">NAVIGATE</div>
+    <div class="side-item" onclick="App.closeMenu();App.switchTab('home')">    <div class="si-icon">🏠</div><div><div class="si-lbl">Home</div></div></div>
+    <div class="side-item" onclick="App.closeMenu();App.switchTab('calendar')"><div class="si-icon">📅</div><div><div class="si-lbl">Calendar</div></div></div>
+    <div class="side-item" onclick="App.closeMenu();App.switchTab('ai')">      <div class="si-icon">🤖</div><div><div class="si-lbl">AI Coach</div></div></div>
+    <div class="side-item" onclick="App.closeMenu();App.switchTab('history')"> <div class="si-icon">📊</div><div><div class="si-lbl">History</div></div></div>
+    <div class="side-item" onclick="App.closeMenu();App.switchTab('badges')">  <div class="si-icon">🏆</div><div><div class="si-lbl">Badges</div></div></div>
+    <div class="side-item" onclick="App.closeMenu();App.switchTab('profile')"> <div class="si-icon">👤</div><div><div class="si-lbl">Profile & Goals</div></div></div>
+    <div class="side-div"></div>
+    <div class="side-item" onclick="App.closeMenu();Sheets.openNew()">        <div class="si-icon">＋</div><div><div class="si-lbl">New Table</div></div></div>
+    <div class="side-item" onclick="App.closeMenu();Widget.trigger()">         <div class="si-icon">🔔</div><div><div class="si-lbl">Test Alert</div></div></div>
+    <div class="side-item" onclick="App.closeMenu();Widget.installPWA()">     <div class="si-icon">📲</div><div><div class="si-lbl">Install App</div></div></div>
+    <div class="side-div"></div>
+    <div class="side-item" style="color:var(--red)" onclick="App.closeMenu();Auth.logout()"><div class="si-icon">🚪</div><div><div class="si-lbl" style="color:var(--red)">Log Out</div></div></div>
+  </div>
+</div>
+
+<!-- OVERLAYS -->
+<div class="overlay" id="ov-new" onclick="if(event.target===this)this.classList.remove('open')"><div class="sheet"><div class="sh-handle"></div><div class="sh-title">NEW TABLE</div><div class="sh-sub">WHAT DO YOU WANT TO TRACK?</div><div class="type-row"><div class="t-opt sel" id="to-tt" onclick="Sheets.pickType('timetable')"><div class="t-opt-icon">📋</div><div class="t-opt-lbl">TIMETABLE</div></div><div class="t-opt" id="to-build" onclick="Sheets.pickType('build')"><div class="t-opt-icon">🔥</div><div class="t-opt-lbl">BUILD HABIT</div></div><div class="t-opt" id="to-stop" onclick="Sheets.pickType('stop')"><div class="t-opt-icon">🚫</div><div class="t-opt-lbl">STOP HABIT</div></div></div><div id="sched-type-section"><label class="f-lbl">SCHEDULE TYPE</label><div class="sched-type-row"><div class="st-opt sel" id="st-default" onclick="Sheets.pickSchedType('default')"><div class="st-opt-icon">📋</div><div class="st-opt-lbl">DEFAULT</div><div class="st-opt-sub">Pre-loaded from your image</div></div><div class="st-opt" id="st-custom" onclick="Sheets.pickSchedType('custom')"><div class="st-opt-icon">✏️</div><div class="st-opt-lbl">CUSTOM</div><div class="st-opt-sub">Build your own</div></div></div></div><label class="f-lbl">TABLE NAME</label><input class="f-inp" id="new-name" placeholder="e.g. My Daily Routine…" maxlength="40"/><label class="f-lbl">GOAL / NOTE <span style="color:var(--tx3)">(optional)</span></label><input class="f-inp" id="new-goal" placeholder="What are you trying to achieve?"/><div class="sh-footer"><button class="btn btn-ghost" onclick="document.getElementById('ov-new').classList.remove('open')">CANCEL</button><button class="btn btn-primary" onclick="Sheets.saveNew()">SAVE TABLE →</button></div></div></div>
+<div class="overlay" id="ov-edit-tbl" onclick="if(event.target===this)this.classList.remove('open')"><div class="sheet"><div class="sh-handle"></div><div class="sh-title">EDIT TABLE</div><div class="sh-sub">UPDATE NAME OR GOAL</div><input type="hidden" id="edit-tbl-id"/><label class="f-lbl">TABLE NAME</label><input class="f-inp" id="edit-tbl-name" maxlength="40"/><label class="f-lbl">GOAL / NOTE</label><input class="f-inp" id="edit-tbl-goal"/><div class="sh-footer"><button class="btn btn-ghost" onclick="document.getElementById('ov-edit-tbl').classList.remove('open')">CANCEL</button><button class="btn btn-primary" onclick="saveEditTable()">SAVE →</button></div></div></div>
+<div class="overlay" id="ov-block" onclick="if(event.target===this)this.classList.remove('open')"><div class="sheet"><div class="sh-handle"></div><div class="sh-title" id="block-sheet-title">ADD BLOCK</div><div class="sh-sub">DEFINE A TIME BLOCK</div><label class="f-lbl">LABEL</label><input class="f-inp" id="bl-label" placeholder="e.g. Morning Exercise…" maxlength="50"/><label class="f-lbl">TAG (optional)</label><input class="f-inp" id="bl-tag" placeholder="WORK, HOME, FOCUS…" maxlength="20"/>
+<label class="f-lbl">PRIORITY</label>
+<select class="f-inp" id="bl-priority" style="cursor:pointer">
+  <option value="critical">🔴 CRITICAL — Mission-critical block</option>
+  <option value="high">🟠 HIGH — Important, matters significantly</option>
+  <option value="normal" selected>🟢 NORMAL — Standard daily block</option>
+  <option value="background">⚫ BACKGROUND — Nice to do, low weight</option>
+</select><label class="f-lbl">TIME</label><div class="f-row"><div><div class="f-lbl">START</div><input class="f-inp" id="bl-start" type="time" style="margin-bottom:0"/></div><div><div class="f-lbl">END</div><input class="f-inp" id="bl-end" type="time" style="margin-bottom:0"/></div></div><div class="sh-footer"><button class="btn btn-ghost" onclick="document.getElementById('ov-block').classList.remove('open')">CANCEL</button><button class="btn btn-primary" onclick="Sheets.saveBlock()">SAVE →</button></div></div></div>
+<div class="overlay" id="ov-profile" onclick="if(event.target===this)this.classList.remove('open')"><div class="sheet"><div class="sh-handle"></div><div class="sh-title">PROFILE</div><div class="sh-sub">YOUR PERSONAL INFO</div><label class="f-lbl">NAME</label><input class="f-inp" id="p-name" maxlength="30"/><label class="f-lbl">AIM / GOAL</label><input class="f-inp" id="p-aim" placeholder="Your main life aim" maxlength="80"/><label class="f-lbl">LIFE MISSION <span style="color:var(--tx3)">(what you are building — AI reads this)</span></label><textarea class="f-inp" id="p-mission" placeholder="I am building…" maxlength="200" rows="3" style="resize:none;line-height:1.6;margin-bottom:12px"></textarea><label class="f-lbl">DATE REGISTERED</label><input class="f-inp" id="p-date" readonly/><div class="sh-footer"><button class="btn btn-ghost" onclick="document.getElementById('ov-profile').classList.remove('open')">CANCEL</button><button class="btn btn-primary" onclick="Sheets.saveProfile()">SAVE →</button></div></div></div>
+<div class="overlay" id="ov-tz" onclick="if(event.target===this)this.classList.remove('open')"><div class="sheet"><div class="sh-handle"></div><div class="sh-title">TIMEZONE</div><div class="sh-sub">CHOOSE YOUR LOCATION</div><div class="tz-grid" id="tz-grid-settings"></div><div class="sh-footer"><button class="btn btn-ghost" onclick="document.getElementById('ov-tz').classList.remove('open')">CANCEL</button><button class="btn btn-primary" onclick="Sheets.saveTZ()">SAVE →</button></div></div></div>
+<div class="overlay" id="ov-timefmt" onclick="if(event.target===this)this.classList.remove('open')"><div class="sheet"><div class="sh-handle"></div><div class="sh-title">TIME FORMAT</div><div class="sh-sub">HOW TIME DISPLAYS APP-WIDE</div><div class="time-fmt-row" style="margin-bottom:18px"><div class="time-fmt-opt" data-fmt="24h" onclick="this.parentElement.querySelectorAll('.time-fmt-opt').forEach(e=>e.classList.remove('sel'));this.classList.add('sel')"><div class="time-fmt-icon">🕐</div><div class="time-fmt-lbl">24-HOUR</div><div class="time-fmt-sub">14:30 · 08:00</div></div><div class="time-fmt-opt" data-fmt="12h" onclick="this.parentElement.querySelectorAll('.time-fmt-opt').forEach(e=>e.classList.remove('sel'));this.classList.add('sel')"><div class="time-fmt-icon">🕑</div><div class="time-fmt-lbl">12-HOUR</div><div class="time-fmt-sub">2:30 PM · 8:00 AM</div></div></div><div class="sh-footer"><button class="btn btn-ghost" onclick="document.getElementById('ov-timefmt').classList.remove('open')">CANCEL</button><button class="btn btn-primary" onclick="Sheets.saveTimeFmt()">SAVE →</button></div></div></div>
+<div class="overlay" id="ov-alert" onclick="if(event.target===this)this.classList.remove('open')"><div class="sheet"><div class="sh-handle"></div><div class="sh-title">ALERT SETTINGS</div><div class="sh-sub">VOICE, ALARM & TIMING</div><div class="toggle-row" style="margin-bottom:8px"><div class="toggle-info"><div class="toggle-lbl">Enable Alerts</div><div class="toggle-sub">Show widget & play sounds</div></div><div class="toggle" id="alert-enabled-toggle" onclick="Sheets.toggleAlertEnabled()"></div></div><div class="toggle-row" style="margin-bottom:8px"><div class="toggle-info"><div class="toggle-lbl">Voice Alert</div><div class="toggle-sub">Speaks your name when app opens</div></div><div class="toggle" id="voice-toggle" onclick="Sheets.toggleVoice()"></div></div><div class="toggle-row" style="margin-bottom:14px"><div class="toggle-info"><div class="toggle-lbl">Alarm Sound</div><div class="toggle-sub">Plays alarm tone</div></div><div class="toggle" id="alarm-toggle" onclick="Sheets.toggleAlarm()"></div></div><label class="f-lbl">VOICE PERSONALITY</label><div class="type-row" style="margin-bottom:14px"><div class="t-opt" id="vp-strict" onclick="Sheets.pickPersonality('strict')"><div class="t-opt-icon">😤</div><div class="t-opt-lbl">STRICT</div></div><div class="t-opt" id="vp-friendly" onclick="Sheets.pickPersonality('friendly')"><div class="t-opt-icon">😊</div><div class="t-opt-lbl">FRIENDLY</div></div><div class="t-opt" id="vp-motivational" onclick="Sheets.pickPersonality('motivational')"><div class="t-opt-icon">💪</div><div class="t-opt-lbl">HYPE</div></div></div><label class="f-lbl">VOICE VOLUME</label><input type="range" id="alert-volume" min="0" max="1" step="0.1" value="0.9" style="width:100%;margin-bottom:14px;accent-color:var(--acc)"/><label class="f-lbl">ALARM VOLUME</label><input type="range" id="alarm-volume" min="0" max="1" step="0.1" value="0.8" style="width:100%;margin-bottom:14px;accent-color:var(--acc)"/><div class="toggle-row" style="margin-bottom:14px"><div class="toggle-info"><div class="toggle-lbl">Auto-Detect Timing</div><div class="toggle-sub">Alert if below 50% by midday</div></div><div class="toggle" id="auto-detect-toggle" onclick="Sheets.toggleAutoDetect()"></div></div><label class="f-lbl">MANUAL ALERT TIMES</label><div style="display:flex;gap:8px;margin-bottom:8px"><input class="f-inp" type="time" id="manual-time-inp" style="flex:1;margin-bottom:0"/><button class="btn btn-primary btn-sm" onclick="Sheets.addManualTime()">ADD</button></div><div id="manual-times-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px"></div><div class="sh-footer"><button class="btn btn-ghost" onclick="Sheets.testAlert()">TEST NOW</button><button class="btn btn-primary" onclick="Sheets.saveAlertSettings()">SAVE →</button></div></div></div>
+<div class="overlay" id="ov-pin-mgr" onclick="if(event.target===this)this.classList.remove('open')"><div class="sheet"><div class="sh-handle"></div><div class="sh-title">MANAGE PINS</div><div class="sh-sub">UPDATE YOUR 2 LOGIN PINS (5 DIGITS EACH)</div><div id="pin-mgr-slots"></div><div class="sh-footer"><button class="btn btn-ghost" onclick="document.getElementById('ov-pin-mgr').classList.remove('open')">CANCEL</button><button class="btn btn-primary" onclick="Auth.saveManagedPins()">SAVE PINS →</button></div></div></div>
+<div class="overlay" id="ov-goal" onclick="if(event.target===this)this.classList.remove('open')"><div class="sheet"><div class="sh-handle"></div><div class="sh-title">NEW GOAL</div><div class="sh-sub">SET A LONG-TERM TARGET</div><label class="f-lbl">LIFE AREA</label><div class="goal-form-area-row" id="goal-area-select"></div><label class="f-lbl">GOAL NAME</label><input class="f-inp" id="goal-name-inp" placeholder="e.g. Learn to code, Lose 10kg…" maxlength="60"/><label class="f-lbl">DESCRIPTION (optional)</label><input class="f-inp" id="goal-desc-inp" placeholder="What does success look like?"/><label class="f-lbl">DEADLINE (optional)</label><input class="f-inp" type="date" id="goal-deadline-inp" style="margin-bottom:14px"/><label class="f-lbl">MILESTONES (optional steps)</label><div id="goal-ms-list" style="margin-bottom:8px"></div><button class="btn btn-ghost btn-sm" onclick="addMilestoneRow()" style="width:100%;margin-bottom:12px">＋ ADD MILESTONE</button><div class="sh-footer"><button class="btn btn-ghost" onclick="document.getElementById('ov-goal').classList.remove('open')">CANCEL</button><button class="btn btn-primary" onclick="saveGoal()">SAVE GOAL →</button></div></div></div>
+<div class="overlay" id="ov-manage" onclick="if(event.target===this)this.classList.remove('open')"><div class="sheet"><div class="sh-handle"></div><div class="sh-title">MANAGE TABLES</div><div class="sh-sub">ARCHIVE TO END · DELETE TO REMOVE</div><div id="manage-list" style="max-height:55vh;overflow-y:auto"></div><div class="sh-footer" style="margin-top:10px"><button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('ov-manage').classList.remove('open')">CLOSE</button></div></div></div>
+<div class="overlay center" id="ov-confirm"><div class="confirm-box"><div class="confirm-icon" id="conf-icon">⚠️</div><div class="confirm-title" id="conf-title">ARE YOU SURE?</div><div class="confirm-msg" id="conf-msg">This cannot be undone.</div><div class="confirm-btns"><button class="btn btn-ghost" style="flex:1" onclick="Confirm.resolve(false)">CANCEL</button><button class="btn btn-danger" id="conf-btn" onclick="Confirm.resolve(true)">CONFIRM</button></div></div></div>
+<div id="toast-container"></div>
+
+<!-- SCRIPTS — load order matters -->
+<script src="js/config.js"></script>
+<script src="js/core/storage.js"></script>
+<script src="js/core/state.js"></script>
+<script src="js/core/timezone.js"></script>
+<script src="js/core/email-auth.js"></script>
+<script src="js/core/guest-session.js"></script>
+<script src="js/core/data-sync.js"></script>
+<script type="module" src="js/core/firebase-init.js"></script>
+<script src="js/features/auth.js"></script>
+<script src="js/features/widget.js"></script>
+<script src="js/features/goals.js"></script>
+<script src="js/features/badges.js"></script>
+<script src="js/features/calendar.js"></script>
+<script src="js/features/ai-coach.js"></script>
+<script src="js/app.js"></script>
+<script>
+(function boot(){
+  // TZ grid for setup
+  const g=document.getElementById('tz-grid-setup');
+  State.TZ_LIST.forEach(t=>{
+    const d=document.createElement('div');d.className='tz-opt-glass'+(t.tz==='Africa/Lagos'?' sel':'');d.dataset.tz=t.tz;
+    d.innerHTML=`<div class="tz-opt-name">${t.name}</div><div class="tz-opt-off">${t.off}</div>`;
+    d.onclick=()=>{g.querySelectorAll('.tz-opt-glass').forEach(e=>e.classList.remove('sel'));d.classList.add('sel');Auth.pickTZ(t.tz);};
+    g.appendChild(d);
+  });
+  // Theme swatches setup
+  const tg=document.getElementById('theme-grid-setup');
+  State.THEMES.forEach((th,i)=>{
+    const s=document.createElement('div');s.className='theme-swatch'+(i===0?' active':'');s.dataset.t=th.id;s.style.background=th.color;
+    s.onclick=()=>Auth.pickTheme(s);tg.appendChild(s);
+  });
+  // Theme dots profile — populated by _renderThemeDots() after App.launch()
+  // Do NOT create dots here: active theme isn't known until user logs in
+  // PIN slots (2 pins, 5 digits each) — reusable for setup + sign-in.
+  // Hardened: inline styles are set explicitly (not just via the .pin-slot
+  // CSS class) so these can never render invisibly even if some future
+  // change to the CSS cascade, load order, or theme context breaks the
+  // class-based styling — this was flagged as a real risk to guard
+  // against, even though the .pin-slot rules themselves were confirmed
+  // correct and unscoped.
+  const _renderPinSlots = (containerId, idPrefix) => {
+    const pc = document.getElementById(containerId);
+    if (!pc) {
+      console.error(`[UPG] PIN container #${containerId} not found in DOM — cannot render PIN inputs.`);
+      return;
+    }
+    for (let i = 0; i < 2; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'pin-slot';
+      slot.style.cssText = 'background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);' +
+        'border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;min-height:24px;';
+      slot.innerHTML = `<div class="pin-slot-num" style="font-size:9px;color:rgba(255,255,255,.5);letter-spacing:1px;text-transform:uppercase;flex-shrink:0;width:36px;">PIN ${i + 1}</div>
+        <input class="pin-slot-input" type="password" maxlength="5" inputmode="numeric" pattern="[0-9]*"
+          placeholder="•••••" id="${idPrefix}-${i}"
+          style="font-family:var(--font-m);font-size:16px;color:#fff;background:transparent;border:none;outline:none;width:100%;letter-spacing:4px"/>
+        <div class="pin-slot-status" id="${idPrefix}-st-${i}"></div>`;
+      pc.appendChild(slot);
+    }
+    // Loud failure signal instead of a silent, confusing broken form:
+    // if this ever produces 0 children, something is badly wrong and the
+    // person should see an obvious error, not a mysteriously blank gap.
+    if (pc.children.length === 0) {
+      console.error(`[UPG] PIN slots failed to render into #${containerId}.`);
+      pc.innerHTML = '<div style="color:#ff6b6b;font-size:13px;padding:12px;border:1px solid #ff6b6b;border-radius:10px;">⚠️ PIN fields failed to load. Please reload the page. If this persists, clear site data and reload.</div>';
+    }
+  };
+  _renderPinSlots('pins-container', 'setup-pin');
+  // Create js/components dir reference (toast/confirm already in badges.js)
+  // Export helpers
+  window._exportSchedule=()=>{const tbl=State.activeTbl||State.tables.find(t=>!t.archived&&t.type==='timetable');if(!tbl){Toast.warning('No timetable open');return;}ExportData.exportScheduleText(tbl);};
+  window._exportWeekly=()=>{const tbl=State.tables.find(t=>!t.archived&&t.type==='timetable');if(!tbl){Toast.warning('No timetable found');return;}ExportData.exportWeeklyHTML(tbl);};
+})();
+</script>
+
+  <!-- ══ UPGRADE OVERLAY ══ -->
+  <div class="overlay" id="ov-upgrade">
+    <div class="sheet" style="max-height:80vh;overflow-y:auto">
+      <div class="sheet-handle"></div>
+
+      <!-- Header -->
+      <div style="text-align:center;padding:8px 0 20px">
+        <div style="font-size:32px;margin-bottom:8px">⚡</div>
+        <div style="font-size:22px;font-weight:800;letter-spacing:2px;color:var(--acc)" id="upgrade-tier-name">PRO PLAN</div>
+        <div style="font-family:var(--font-m);font-size:8px;color:var(--tx2);letter-spacing:1px;margin-top:4px">
+          UNLOCK EVERYTHING
+        </div>
+      </div>
+
+      <!-- Features list -->
+      <div id="upgrade-features" style="margin-bottom:20px;font-family:var(--font-m);font-size:9px;color:var(--tx);letter-spacing:.3px;line-height:2.2"></div>
+
+      <!-- Pricing toggle -->
+      <div style="background:var(--bg3);border-radius:var(--r-md);padding:14px;margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div>
+            <div style="font-family:var(--font-m);font-size:8px;color:var(--tx2);letter-spacing:1px">MONTHLY</div>
+            <div style="font-size:20px;font-weight:800;margin-top:2px" id="upgrade-monthly">₦2,500 / month</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:var(--font-m);font-size:8px;color:var(--acc);letter-spacing:1px">YEARLY · SAVE 33%</div>
+            <div style="font-size:20px;font-weight:800;margin-top:2px" id="upgrade-yearly">₦20,000 / year</div>
+          </div>
+        </div>
+        <div style="font-family:var(--font-m);font-size:7px;color:var(--tx3);letter-spacing:.5px;line-height:1.8;border-top:1px solid var(--bd);padding-top:10px">
+          💳 Paystack · Flutterwave · Bank Transfer · USSD<br>
+          Cancel anytime · No hidden charges
+        </div>
+      </div>
+
+      <!-- CTA Buttons -->
+      <button class="btn btn-primary" style="width:100%;margin-bottom:8px;opacity:.65;cursor:not-allowed" disabled
+        onclick="Sub.initPayment('pro','monthly')">
+        PAY MONTHLY — COMING SOON
+      </button>
+      <button class="btn btn-ghost" style="width:100%;margin-bottom:12px;opacity:.65;cursor:not-allowed" disabled
+        onclick="Sub.initPayment('pro','yearly')">
+        PAY YEARLY — COMING SOON
+      </button>
+
+      <!-- Coming soon note -->
+      <div style="font-family:var(--font-m);font-size:7px;color:var(--tx3);text-align:center;letter-spacing:.5px;line-height:1.8">
+        Subscriptions activate after public launch.<br>
+        All features currently available for free during beta.
+      </div>
+
+      <button class="btn btn-ghost" style="width:100%;margin-top:14px"
+        onclick="document.getElementById('ov-upgrade').classList.remove('open')">
+        CLOSE
+      </button>
+    </div>
+  </div>
+</body>
+</html>

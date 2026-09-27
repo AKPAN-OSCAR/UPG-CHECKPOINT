@@ -1,0 +1,52 @@
+/* ═══════════════════════════════════════
+   UPG — DESIGN TOKENS (v3, "ember" system)
+   Ported directly from the approved redesign prototype
+   (upg-redesign-prototype-v4.html). Dark is the only mode defined
+   here on purpose — see the note in Menu.jsx about the Appearance
+   toggle: Light mode is intentionally deferred rather than guessed at,
+   since the prototype itself never defined real light-mode values.
+═══════════════════════════════════════ */
+:root{
+  --bg:#0A0B0F; --surface-1:#14161C; --surface-2:#1C1F27; --surface-3:#23262F;
+  --hair:rgba(255,255,255,0.07); --hair-strong:rgba(255,255,255,0.13);
+  --text-1:#F5F6F8; --text-2:#9BA1AF; --text-3:#666C79;
+  --ember-1:#FFC15A; --ember-2:#FF7A1A;
+  --ember-grad:linear-gradient(135deg,#FFCB6B 0%,#FF8A2B 55%,#FF5E1A 100%);
+  --emerald:#34D399; --emerald-dim:#1F5D48;
+  --rose:#FF5266; --rose-dim:#4A1E27;
+  --sapphire:#5B8CFF;
+  --radius-card:20px; --radius-ctl:12px;
+
+  --font-display:'Sora', sans-serif;
+  --font-body:'Inter', sans-serif;
+  --font-mono:'JetBrains Mono', monospace;
+  /* Coach-voice signature: Sora Italic, reused rather than adding a
+     4th font family — see AICoach.jsx for exactly where this applies. */
+  --font-coach:'Sora', sans-serif;
+
+  /* ── Backward-compat aliases ──
+     A handful of screens (Home, TimetableView, HabitView, Progress,
+     AlarmSettings, AlarmFiring, GoalsScreen, NewTableModal) still use
+     the PREVIOUS token names from before this redesign pass and are
+     next in line to be restyled properly. These aliases exist purely
+     so they render correctly with the new palette in the meantime,
+     instead of showing broken/undefined CSS variables. Remove each
+     alias once its last screen has been restyled to the real names
+     above. */
+  --ink:var(--bg); --ink-2:var(--surface-1);
+  --card:var(--surface-1); --card-2:var(--surface-2);
+  --gold:var(--ember-1); --gold-deep:var(--ember-2);
+  --coral:var(--rose); --teal:var(--emerald);
+  --text:var(--text-1); --body-bg:var(--bg);
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body,#root{height:100%;}
+body{
+  background:#05060A;
+  color:var(--text-1);
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit;}
+input,textarea{font-family:inherit;color:inherit;}

@@ -1,0 +1,16 @@
+.goals-screen{padding:18px;}
+.empty-note{font-size:12px;color:var(--text-3);text-align:center;padding:30px 0;}
+.goal-card{background:var(--card);border:1px solid var(--hair);border-radius:16px;padding:15px;margin-bottom:12px;}
+.goal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.goal-name{font-size:13px;font-weight:600;}
+.goal-area{font-size:9.5px;color:var(--gold);background:rgba(242,166,61,0.12);padding:3px 8px;border-radius:8px;}
+.goal-bar-track{height:6px;border-radius:4px;background:var(--hair);margin-bottom:8px;}
+.goal-bar-fill{height:6px;border-radius:4px;background:var(--teal);}
+.goal-meta{font-size:10px;color:var(--text-3);}
+.field{width:100%;background:var(--card);border:1px solid var(--hair);border-radius:12px;padding:13px 14px;font-size:13px;color:var(--text);margin-bottom:10px;}
+.area-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.area-chip{font-size:10.5px;padding:7px 12px;border-radius:9px;background:var(--card);border:1px solid var(--hair);color:var(--text-2);}
+.area-chip.sel{background:var(--gold);color:#241505;border-color:var(--gold);font-weight:600;}
+.btn-gold{width:100%;background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:#241505;font-weight:600;font-size:14px;padding:14px;border-radius:12px;}
+.btn-gold:disabled{opacity:0.5;}
+.add-block-row{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:1px dashed var(--hair);border-radius:14px;padding:13px;color:var(--gold);font-size:12.5px;font-weight:500;}

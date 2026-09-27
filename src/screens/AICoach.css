@@ -1,0 +1,31 @@
+.chat-screen{display:flex;flex-direction:column;height:100%;max-width:520px;margin:0 auto;}
+.chat-hd{padding:16px 20px;border-bottom:1px solid var(--hair);display:flex;align-items:center;gap:10px;background:var(--surface-1);}
+.coach-avatar{width:30px;height:30px;border-radius:50%;flex-shrink:0;background:var(--ember-grad);display:flex;align-items:center;justify-content:center;}
+.status-dot{color:var(--emerald)!important;font-size:10px;}
+.chat-body{flex:1;padding:18px 16px 100px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;}
+
+.bubble{max-width:82%;padding:12px 15px;border-radius:16px;font-size:13px;line-height:1.55;}
+
+/* THE coach-voice signature: italic Sora for the AI's own words, so
+   it's always visually distinct from the user's plain Inter text —
+   without needing a whole extra font family. */
+.bubble.ai{
+  align-self:flex-start; background:var(--surface-1); border-left:2px solid var(--ember-2);
+  font-family:var(--font-coach); font-style:italic; color:var(--text-1);
+  border-radius:4px 16px 16px 16px;
+}
+.bubble.user{
+  align-self:flex-end; background:var(--ember-grad); color:#2A1200; font-weight:600;
+  font-family:var(--font-body); font-style:normal;
+  border-radius:16px 4px 16px 16px;
+}
+.error-bubble{ color:var(--rose)!important; font-style:normal!important; }
+
+.chat-input{
+  position:fixed; bottom:88px; left:16px; right:16px; max-width:488px; margin:0 auto;
+  padding:10px 10px 10px 16px; background:var(--surface-2); border:1px solid var(--hair-strong);
+  border-radius:16px; display:flex; justify-content:space-between; align-items:center; gap:10px;
+}
+.chat-input input{flex:1;background:none;border:none;font-size:13px;color:var(--text-1);font-family:var(--font-body);}
+.chat-input input::placeholder{color:var(--text-3);}
+.chat-input button{color:#2A1200;background:var(--ember-grad);width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}

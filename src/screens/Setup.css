@@ -1,0 +1,8 @@
+.setup-screen{padding:60px 24px 40px;max-width:420px;margin:0 auto;}
+.setup-progress{display:flex;gap:6px;margin-bottom:28px;}
+.setup-progress .dot{flex:1;height:3px;border-radius:2px;background:var(--hair-strong);}
+.setup-progress .dot.on{background:var(--ember-grad);}
+.setup-list{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;}
+.swatch-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;justify-content:center;padding:10px 0;}
+.fmt-row{display:flex;gap:10px;}
+.fmt-row .btn-ghost{flex:1;}

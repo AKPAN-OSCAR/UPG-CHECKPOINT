@@ -1,0 +1,11 @@
+{
+  "name": "upg-e2e",
+  "description": "Real-browser E2E test for the auth rebuild (Step 2a). Mocks only the Firebase CDN modules — everything else is the real app.",
+  "scripts": {
+    "test": "node run.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.0"
+  },
+  "private": true
+}
